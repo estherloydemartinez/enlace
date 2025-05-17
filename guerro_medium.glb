@@ -1,0 +1,51 @@
+import bpy
+
+# Parámetros: 
+TARGET_TRIS = 10000  # cambiar a 5000 para low-poly
+OBJ_NAME    = "Guerrero"  # nombre de tu objeto en Blender
+
+# Seleccionar objeto
+obj = bpy.data.objects.get(OBJ_NAME)
+if not obj:
+    raise Exception(f"No existe objeto '{OBJ_NAME}' en la escena.")
+
+# Asegurarnos de estar en modo objeto
+bpy.ops.object.mode_set(mode='OBJECT')
+
+# Añadir modificador Decimate
+dec = obj.modifiers.new(name="Decimate", type='DECIMATE')
+dec.ratio = 1.0  # inicial, luego ajustaremos
+
+# Función para aproximar el ratio necesario
+def get_tri_count(o):
+    mesh = o.data
+    return len(mesh.polygons)
+
+# Búsqueda binaria del ratio
+low, high = 0.0, 1.0
+for i in range(20):
+    mid = (low + high) / 2
+    dec.ratio = mid
+    bpy.ops.object.modifier_apply(modifier=dec.name)
+    tris = get_tri_count(obj)
+    if tris > TARGET_TRIS:
+        high = mid
+    else:
+        low = mid
+    # re-crear modificador para siguiente iteración
+    dec = obj.modifiers.new(name="Decimate", type='DECIMATE')
+
+# Aplicar ratio final
+dec.ratio = low
+bpy.ops.object.modifier_apply(modifier=dec.name)
+print(f"Decimación completada: ~{get_tri_count(obj)} triángulos.")
+
+# Exportar a GLB
+bpy.ops.export_scene.gltf(
+    filepath="/tmp/guerrero_medium.glb",
+    export_format='GLB',
+    export_materials='EXPORT',
+    export_texture_dir="textures",
+    export_apply=True
+)
+print("Modelo exportado a /tmp/guerrero_medium.glb")
