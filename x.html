@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Guerrero Medium-Poly</title>
+  <style> body { margin:0; overflow:hidden } canvas{display:block} </style>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.141.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.141.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.141.0/examples/js/loaders/GLTFLoader.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xdddddd);
+
+    const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
+    camera.position.set(0, 2, 6);
+
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    // Iluminación
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(5,10,7.5);
+    scene.add(dirLight);
+    scene.add(new THREE.AmbientLight(0x404040, 0.8));
+
+    // Cargar el modelo optimizado
+    const loader = new THREE.GLTFLoader();
+    loader.load('guerrero_medium.glb', gltf => {
+      const model = gltf.scene;
+      model.traverse(node => {
+        if (node.isMesh) {
+          node.material.flatShading = true;  // si quieres conservar el estilo low-poly
+          node.material.needsUpdate = true;
+        }
+      });
+      scene.add(model);
+    }, undefined, err => {
+      console.error("Error cargando modelo:", err);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+  </html>
